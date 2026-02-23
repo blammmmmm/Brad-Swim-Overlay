@@ -1,420 +1,227 @@
-<!doctype html> 
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Swim Challenge Overlay</title>
-  <style>
-    :root{
-      --w: 520px;
-      --h: 132px;
-      --radius: 26px;
-      --pad: 18px;
-      --bg1: rgba(10, 18, 28, 0.58);
-      --bg2: rgba(10, 18, 28, 0.28);
-      --text: rgba(255,255,255,0.92);
-      --muted: rgba(255,255,255,0.75);
-      --aqua: #48e3ff;
-      --barbg: rgba(255,255,255,0.18);
-      --shadow: 0 16px 50px rgba(0,0,0,0.36);
-      --gold: rgba(255, 208, 92, 0.95);
-    }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Swim Challenge Overlay</title>
 
-    html,body{height:100%; width:100%; margin:0; background:transparent; overflow:hidden; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";}
+<style>
+:root{
+  --w: 560px;
+  --h: 132px;
+  --radius: 26px;
+  --pad: 18px;
 
-    /* Safe placement helper (default bottom-right). Customize via URL params */
-    .stage{
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      display:flex;
-      align-items:flex-end;
-      justify-content:flex-end;
-      padding:64px;
-    }
-    .card{
-      width:var(--w);
-      height:var(--h);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      position:relative;
-      overflow:hidden;
-      transform-origin: bottom right;
-      will-change: transform;
-      isolation:isolate;
-    }
+  --bgA: rgba(12,16,24,0.62);
+  --bgB: rgba(12,16,24,0.34);
 
-    /* Glass plate */
-    .plate{
-      position:absolute; inset:0;
-      background:
-        linear-gradient(135deg, var(--bg1), var(--bg2));
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-    }
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.70);
+  --aqua: #48e3ff;
 
-    /* Water caustics (subtle) */
-    .caustics{
-      position:absolute; inset:-20%;
-      opacity:0.08;
-      mix-blend-mode: overlay;
-      filter: blur(2px);
-      background:
-        radial-gradient(circle at 20% 30%, rgba(120,255,255,0.55) 0 18%, transparent 32%),
-        radial-gradient(circle at 70% 40%, rgba(80,180,255,0.55) 0 22%, transparent 40%),
-        radial-gradient(circle at 40% 70%, rgba(120,255,255,0.42) 0 20%, transparent 42%),
-        radial-gradient(circle at 85% 80%, rgba(90,200,255,0.35) 0 18%, transparent 45%);
-      animation: drift 22s ease-in-out infinite alternate;
-    }
-    @keyframes drift{
-      0%{ transform: translate3d(-12px, 10px, 0) scale(1.02) rotate(-0.5deg); }
-      100%{ transform: translate3d(16px, -12px, 0) scale(1.05) rotate(0.6deg); }
-    }
+  --barbg: rgba(255,255,255,0.16);
+  --shadow: 0 18px 70px rgba(0,0,0,0.42);
+  --gold: rgba(255,208,92,0.95);
+}
 
-    /* Grain (anti-banding, very subtle) */
-    .grain{
-      position:absolute; inset:0;
-      opacity:0.045;
-      mix-blend-mode: soft-light;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.65'/%3E%3C/svg%3E");
-      background-size: 240px 240px;
-    }
+html,body{
+  margin:0;
+  background:transparent;
+  overflow:hidden;
+  font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto;
+}
 
-    /* Content layout */
-    .content{
-      position:absolute; inset:0;
-      padding: var(--pad);
-      display:grid;
-      grid-template-columns: 54px 1fr;
-      grid-template-rows: 1fr auto;
-      gap: 10px 14px;
-      align-items:center;
-    }
+.stage{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-end;
+  padding:64px;
+  pointer-events:none;
+}
 
-    .icon{
-      grid-row: 1 / span 2;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      opacity:0.95;
-      transform: translateY(-1px);
-    }
-    .icon svg{ width:42px; height:42px; }
+.card{
+  width:var(--w);
+  height:var(--h);
+  border-radius:var(--radius);
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  isolation:isolate;
+}
 
-    .topline{
-      display:flex;
-      align-items:baseline;
-      gap:10px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .miles{
-      font-weight: 800;
-      font-size: 58px;
-      line-height: 1;
-      letter-spacing: -0.02em;
-      color: var(--aqua);
-      text-shadow: 0 8px 20px rgba(0,0,0,0.35);
-    }
-    .of{
-      font-weight: 600;
-      font-size: 34px;
-      letter-spacing: -0.01em;
-      color: var(--text);
-      opacity: 0.92;
-    }
-    .unit{
-      font-weight: 600;
-      font-size: 28px;
-      color: var(--muted);
-      margin-left: 2px;
-    }
+/* Glass plate */
+.plate{
+  position:absolute; inset:0;
+  background:linear-gradient(135deg,var(--bgA),var(--bgB));
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
 
-    .barWrap{
-      grid-column: 2;
-      height: 14px;
-      border-radius: 999px;
-      background: var(--barbg);
-      overflow:hidden;
-      position:relative;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-    }
-    .bar{
-      height:100%;
-      width:0%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(72,227,255,0.92), rgba(120,210,255,0.92));
-      box-shadow: 0 8px 22px rgba(72,227,255,0.22);
-      transition: width 520ms cubic-bezier(0.2,0.9,0.2,1);
-      position:relative;
-      overflow:hidden;
-    }
-    .bar::after{
-      content:"";
-      position:absolute; inset:-40%;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.18) 55%, transparent 100%);
-      transform: translateX(-60%);
-      animation: shimmer 8s linear infinite;
-      opacity:0.22;
-      filter: blur(2px);
-    }
-    @keyframes shimmer{
-      0%{ transform: translateX(-65%); }
-      100%{ transform: translateX(65%); }
-    }
+/* Subtle premium border */
+.card::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:var(--radius);
+  padding:1.5px;
+  background:linear-gradient(135deg,
+    rgba(255,255,255,0.30),
+    rgba(255,255,255,0.08),
+    rgba(72,227,255,0.12));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  pointer-events:none;
+}
 
-    .laps{
-      grid-column: 2;
-      justify-self:start;
-      align-self:end;
-      font-weight: 650;
-      font-size: 24px;
-      letter-spacing: 0.02em;
-      color: var(--text);
-      opacity: 0.92;
-    }
-    .laps span{
-      color: rgba(255,255,255,0.8);
-      font-weight: 600;
-    }
+/* Grain */
+.grain{
+  position:absolute; inset:0;
+  opacity:0.035;
+  mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  background-size:240px 240px;
+}
 
-    /* Update sweep on change (very subtle, triggers via JS class) */
-    .sweep{
-      position:absolute; inset:-40%;
-      background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.12) 50%, transparent 65%);
-      transform: translateX(-60%);
-      opacity:0;
-      pointer-events:none;
-    }
-    .card.flash .sweep{
-      opacity:0.9;
-      animation: sweep 300ms ease-out 1;
-    }
-    @keyframes sweep{
-      from{ transform: translateX(-60%); }
-      to{ transform: translateX(60%); }
-    }
+/* Content */
+.content{
+  position:absolute; inset:0;
+  padding:var(--pad);
+  display:grid;
+  gap:10px;
+  align-content:center;
+}
 
-    /* Olympic completion outline draw */
-    .outline{
-      position:absolute; inset:0;
-      pointer-events:none;
-      opacity:0;
-    }
-    .outline svg{ width:100%; height:100%; }
-    .outline path{
-      fill:none;
-      stroke: var(--gold);
-      stroke-width: 3.2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      filter: drop-shadow(0 10px 24px rgba(255,208,92,0.22));
-    }
-    .card.complete .outline{
-      opacity:1;
-    }
-    .card.complete .outline path{
-      stroke-dasharray: var(--dash, 1);
-      stroke-dashoffset: var(--dash, 1);
-      animation: draw 900ms ease-out forwards;
-    }
-    @keyframes draw{
-      to{ stroke-dashoffset: 0; }
-    }
+.topline{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+}
 
-    /* One-time completion pulse */
-    .pulse{
-      position:absolute;
-      left: 92px; top: 18px;
-      width: 240px; height: 92px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 50%, rgba(255,208,92,0.18), transparent 65%);
-      opacity:0;
-      filter: blur(6px);
-      pointer-events:none;
-    }
-    .card.complete.pulsing .pulse{
-      animation: pulse 700ms ease-out 1;
-    }
-    @keyframes pulse{
-      0%{ opacity:0; transform: scale(0.98); }
-      30%{ opacity:1; transform: scale(1.02); }
-      100%{ opacity:0; transform: scale(1.08); }
-    }
+.miles{
+  font-weight:820;
+  font-size:56px;
+  letter-spacing:-0.02em;
+  color:var(--aqua);
+  text-shadow:0 10px 22px rgba(0,0,0,0.35);
+}
 
-    /* Responsive scale via URL param scale=0.8 */
-    .scale{
-      transform: scale(var(--scale, 1));
-    }
+.of{
+  font-weight:650;
+  font-size:32px;
+  color:var(--text);
+}
 
-    /* If user wants top-right: pos=tr */
-    .stage.tr{ align-items:flex-start; justify-content:flex-end; }
-    .stage.br{ align-items:flex-end; justify-content:flex-end; }
-    .stage.tl{ align-items:flex-start; justify-content:flex-start; }
-    .stage.bl{ align-items:flex-end; justify-content:flex-start; }
+.unit{
+  font-weight:650;
+  font-size:24px;
+  color:var(--muted);
+}
 
-  </style>
+.barWrap{
+  height:12px;
+  border-radius:999px;
+  background:var(--barbg);
+  overflow:hidden;
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#48e3ff,#9eeeff);
+  transition:width .5s cubic-bezier(.2,.9,.2,1);
+}
+
+.laps{
+  font-weight:650;
+  font-size:20px;
+  color:var(--text);
+}
+
+.card.tap{
+  animation:tap 180ms ease-out 1;
+}
+
+@keyframes tap{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.006);}
+  100%{transform:scale(1);}
+}
+
+.complete{
+  outline:3px solid var(--gold);
+  outline-offset:-3px;
+}
+</style>
 </head>
+
 <body>
-  <div class="stage br" id="stage">
-    <div class="card scale" id="card">
-      <div class="plate"></div>
-      <div class="caustics"></div>
-      <div class="grain"></div>
-      <div class="sweep"></div>
+<div class="stage">
+  <div class="card" id="card">
+    <div class="plate"></div>
+    <div class="grain"></div>
 
-      <div class="outline">
-        <svg viewBox="0 0 520 132" preserveAspectRatio="none" aria-hidden="true">
-          <!-- rounded rect path -->
-          <path id="outlinePath" d="M26 1.6 H494 Q518.4 1.6 518.4 26 V106 Q518.4 130.4 494 130.4 H26 Q1.6 130.4 1.6 106 V26 Q1.6 1.6 26 1.6 Z"/>
-        </svg>
+    <div class="content">
+      <div class="topline">
+        <div class="miles" id="miles">0.00</div>
+        <div class="of">/ 13.1</div>
+        <div class="unit">miles</div>
       </div>
 
-      <div class="pulse"></div>
-
-      <div class="content">
-        <div class="icon" aria-hidden="true">
-          <svg viewBox="0 0 64 64" fill="none">
-            <path d="M10 30c8-10 16-14 24-14 8 0 14 3 20 8" stroke="rgba(255,255,255,0.88)" stroke-width="5" stroke-linecap="round"/>
-            <path d="M18 44c10 0 14-5 22-5s12 5 22 5" stroke="rgba(72,227,255,0.92)" stroke-width="5" stroke-linecap="round"/>
-            <path d="M12 52c10 0 14-5 22-5s12 5 22 5" stroke="rgba(72,227,255,0.6)" stroke-width="5" stroke-linecap="round"/>
-            <path d="M38 15c-2 4-4 7-7 9" stroke="rgba(255,255,255,0.82)" stroke-width="5" stroke-linecap="round"/>
-          </svg>
-        </div>
-
-        <div class="topline">
-          <div class="miles" id="miles">0.00</div>
-          <div class="of">/ 13.1</div>
-          <div class="unit">miles</div>
-        </div>
-
-        <div class="barWrap" aria-hidden="true">
-          <div class="bar" id="bar"></div>
-        </div>
-
-        <div class="laps" id="laps"><span>Laps:</span> 0 / 865</div>
+      <div class="barWrap">
+        <div class="bar" id="bar"></div>
       </div>
+
+      <div class="laps" id="laps">Laps: 0 / 865</div>
     </div>
   </div>
+</div>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script>
-    // ======= CONFIG YOU MUST EDIT =======
-    const firebaseConfig = {
-      apiKey: "AIzaSyD3YIe1lBy625FN_ujSnwGJXSvDUGbDYfU",
-      authDomain: "brad-swim-overlay.firebaseapp.com",
-      databaseURL: "https://brad-swim-overlay-default-rtdb.firebaseio.com",
-      projectId: "brad-swim-overlay",
-      storageBucket: "brad-swim-overlay.firebasestorage.app",
-      messagingSenderId: "438110148127",
-      appId: "1:438110148127:web:2bcbb03875e68304c0a72a"
-    };
-    // ===================================
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD3YIe1lBy625FN_ujSnwGJXSvDUGbDYfU",
+  authDomain: "brad-swim-overlay.firebaseapp.com",
+  databaseURL: "https://brad-swim-overlay-default-rtdb.firebaseio.com",
+  projectId: "brad-swim-overlay",
+  storageBucket: "brad-swim-overlay.firebasestorage.app",
+  messagingSenderId: "438110148127",
+  appId: "1:438110148127:web:2bcbb03875e68304c0a72a"
+};
 
-    const TARGET_MILES = 13.1;
-    const TARGET_LAPS  = 865;
-    const FEET_PER_LAP = 80;
-    const FEET_PER_MILE = 5280;
-    const MILES_PER_LAP = FEET_PER_LAP / FEET_PER_MILE;
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    // URL params: room=brad-13.1  pos=br|tr|bl|tl  scale=0.8  pad=64
-    const params = new URLSearchParams(location.search);
-    const room = params.get("room") || "brad-13.1";
-    const pos = (params.get("pos") || "br").toLowerCase();
-    const scale = parseFloat(params.get("scale") || "1");
-    const pad = parseInt(params.get("pad") || "64", 10);
+const TARGET_LAPS = 865;
+const MILES_PER_LAP = 80/5280;
 
-    const stage = document.getElementById("stage");
-    stage.className = "stage " + (["br","tr","bl","tl"].includes(pos) ? pos : "br");
-    stage.style.padding = pad + "px";
+const milesEl = document.getElementById("miles");
+const lapsEl = document.getElementById("laps");
+const barEl = document.getElementById("bar");
+const card = document.getElementById("card");
 
-    const card = document.getElementById("card");
-    card.style.setProperty("--scale", String(scale));
+db.ref("rooms/brad-13-1/lapsCompleted").on("value", snap=>{
+  const laps = Math.max(0, parseInt(snap.val()||0));
+  const miles = laps*MILES_PER_LAP;
+  const progress = Math.min(1,laps/TARGET_LAPS);
 
-    const milesEl = document.getElementById("miles");
-    const lapsEl  = document.getElementById("laps");
-    const barEl   = document.getElementById("bar");
+  milesEl.textContent = miles.toFixed(2);
+  lapsEl.textContent = "Laps: "+laps+" / "+TARGET_LAPS;
+  barEl.style.width = (progress*100)+"%";
 
-    // Prep SVG outline stroke length (for draw animation)
-    const outlinePath = document.getElementById("outlinePath");
-    try {
-      const len = outlinePath.getTotalLength();
-      card.style.setProperty("--dash", String(len));
-    } catch (e) {}
+  card.classList.remove("tap");
+  void card.offsetWidth;
+  card.classList.add("tap");
 
-    // Smooth number tween
-    let currentMiles = 0;
-    let tweenHandle = null;
-
-    function animateMiles(to){
-      const from = currentMiles;
-      const start = performance.now();
-      const dur = 420;
-
-      if (tweenHandle) cancelAnimationFrame(tweenHandle);
-
-      function ease(t){
-        // cubic-bezier(0.2,0.9,0.2,1) approx
-        return 1 - Math.pow(1 - t, 3);
-      }
-
-      function step(now){
-        const t = Math.min(1, (now - start) / dur);
-        const v = from + (to - from) * ease(t);
-        milesEl.textContent = v.toFixed(2);
-        if (t < 1){
-          tweenHandle = requestAnimationFrame(step);
-        } else {
-          currentMiles = to;
-          tweenHandle = null;
-        }
-      }
-      tweenHandle = requestAnimationFrame(step);
-    }
-
-    function flash(){
-      card.classList.add("flash");
-      window.setTimeout(() => card.classList.remove("flash"), 260);
-    }
-
-    let hasCompleted = false;
-    function setComplete(){
-      if (hasCompleted) return;
-      hasCompleted = true;
-      card.classList.add("complete","pulsing");
-      window.setTimeout(() => card.classList.remove("pulsing"), 760);
-    }
-
-    // Firebase init
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const lapsRef = db.ref("rooms/" + room + "/lapsCompleted");
-
-    // Ensure default exists (read-only path if rules block this; safe)
-    lapsRef.once("value").then(snap => {
-      if (snap.val() == null) lapsRef.set(0).catch(()=>{});
-    }).catch(()=>{});
-
-    lapsRef.on("value", (snap) => {
-      const laps = Math.max(0, parseInt(snap.val() ?? 0, 10) || 0);
-
-      // Derived
-      const miles = laps * MILES_PER_LAP;
-      const progress = Math.min(1, laps / TARGET_LAPS);
-
-      // Update UI
-      animateMiles(miles);
-      lapsEl.innerHTML = "<span>Laps:</span> " + laps + " / " + TARGET_LAPS;
-      barEl.style.width = (progress * 100).toFixed(3) + "%";
-      flash();
-
-      if (laps >= TARGET_LAPS) setComplete();
-    });
-  </script>
+  if(laps>=TARGET_LAPS){
+    card.classList.add("complete");
+  }
+});
+</script>
 </body>
 </html>
