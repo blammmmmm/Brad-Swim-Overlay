@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Swim Challenge Controller</title>
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.08);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.7);
+      --aqua: #48e3ff;
+      --gold: rgba(255, 208, 92, 0.95);
+      --danger: #ff4d6d;
+      --ok: #60ffb0;
+      --radius: 18px;
+      --shadow: 0 18px 60px rgba(0,0,0,0.45);
+    }
+
+    html,body{height:100%; margin:0; background: radial-gradient(1200px 800px at 20% 0%, rgba(72,227,255,0.10), transparent 60%), radial-gradient(900px 600px at 90% 20%, rgba(255,208,92,0.08), transparent 55%), var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    .wrap{
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 18px 44px;
+    }
+    .title{
+      display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+      margin-bottom: 12px;
+    }
+    h1{font-size: 22px; margin:0; letter-spacing:-0.01em;}
+    .room{font-size: 14px; color:var(--muted);}
+    .panel{
+      background: linear-gradient(180deg, var(--card), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelTop{
+      padding: 18px;
+      display:flex; align-items:center; justify-content:space-between; gap:14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(90deg, rgba(72,227,255,0.06), rgba(255,255,255,0.00));
+    }
+    .big{
+      font-size: 54px;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+      color: var(--aqua);
+      line-height: 1;
+      text-shadow: 0 12px 26px rgba(0,0,0,0.35);
+    }
+    .sub{
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .rightInfo{
+      text-align:right;
+      min-width: 180px;
+    }
+    .rightInfo .miles{
+      font-size: 26px;
+      font-weight: 750;
+      letter-spacing:-0.01em;
+    }
+    .rightInfo .miles span{ color: var(--muted); font-weight: 650; }
+    .rightInfo .target{
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .controls{
+      padding: 18px;
+      display:grid;
+      gap: 14px;
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button{
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 14px 14px;
+      font-size: 16px;
+      font-weight: 750;
+      letter-spacing: 0.01em;
+      cursor:pointer;
+      user-select:none;
+      min-width: 100px;
+      flex: 1 1 120px;
+      transition: transform 80ms ease, background 120ms ease, border-color 120ms ease;
+      touch-action: manipulation;
+    }
+    button:active{ transform: translateY(1px) scale(0.99); }
+    .primary{ background: rgba(72,227,255,0.14); border-color: rgba(72,227,255,0.32); }
+    .primary:hover{ background: rgba(72,227,255,0.18); }
+    .minus{ background: rgba(255,255,255,0.06); }
+    .minus:hover{ background: rgba(255,255,255,0.08); }
+    .danger{ background: rgba(255,77,109,0.14); border-color: rgba(255,77,109,0.38); }
+    .danger:hover{ background: rgba(255,77,109,0.18); }
+
+    .field{
+      display:flex; gap:10px; flex-wrap:wrap;
+      align-items:center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    input{
+      flex: 1 1 220px;
+      min-width: 200px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      outline:none;
+      font-size: 16px;
+      font-weight: 650;
+    }
+    .smallBtn{
+      min-width: 140px;
+      flex: 0 0 auto;
+      padding: 12px 14px;
+      border-radius: 12px;
+    }
+
+    .note{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 200ms ease, transform 200ms ease;
+      backdrop-filter: blur(10px);
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .footer{
+      margin-top: 14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+    }
+    .dot{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: var(--ok);
+      box-shadow: 0 0 0 4px rgba(96,255,176,0.14);
+    }
+    .dot.off{ background: var(--danger); box-shadow: 0 0 0 4px rgba(255,77,109,0.14); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">
+      <h1>Swim Challenge Controller</h1>
+      <div class="room">room: <span id="roomLabel">—</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panelTop">
+        <div>
+          <div class="sub">LAPS COMPLETED</div>
+          <div class="big" id="lapsBig">0</div>
+        </div>
+
+        <div class="rightInfo">
+          <div class="miles"><span>Miles:</span> <span id="miles">0.00</span> / 13.1</div>
+          <div class="target" id="remaining">Remaining: 865 laps</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="row">
+          <button class="primary" id="plus1">+1 lap</button>
+          <button class="primary" id="plus5">+5</button>
+          <button class="primary" id="plus10">+10</button>
+          <button class="minus" id="minus1">-1</button>
+        </div>
+
+        <div class="field">
+          <input id="setInput" type="number" inputmode="numeric" placeholder="Set laps to…" min="0"/>
+          <button class="smallBtn" id="setBtn">Set</button>
+          <button class="smallBtn danger" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="note">
+          Tip: If someone double-taps, hit <b>-1</b>. “Reset” asks for confirmation.
+          <br/>Overlay reads the same room ID. Share this controller link with your team.
+        </div>
+
+        <div class="footer">
+          <span class="pill"><span class="dot" id="dot"></span><span id="status">Connected</span></span>
+          <span>Target: 865 laps • Pool: 80 ft</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    // ======= CONFIG YOU MUST EDIT =======
+    const firebaseConfig = {
+      apiKey: "REPLACE_ME",
+      authDomain: "REPLACE_ME",
+      databaseURL: "REPLACE_ME",
+      projectId: "REPLACE_ME",
+      storageBucket: "REPLACE_ME",
+      messagingSenderId: "REPLACE_ME",
+      appId: "REPLACE_ME"
+    };
+    // ===================================
+
+    const TARGET_MILES = 13.1;
+    const TARGET_LAPS  = 865;
+    const FEET_PER_LAP = 80;
+    const FEET_PER_MILE = 5280;
+    const MILES_PER_LAP = FEET_PER_LAP / FEET_PER_MILE;
+
+    const params = new URLSearchParams(location.search);
+    const room = params.get("room") || "brad-13.1";
+    document.getElementById("roomLabel").textContent = room;
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const roomRef = db.ref("rooms/" + room);
+    const lapsRef = db.ref("rooms/" + room + "/lapsCompleted");
+
+    const lapsBig = document.getElementById("lapsBig");
+    const milesEl = document.getElementById("miles");
+    const remainingEl = document.getElementById("remaining");
+    const dot = document.getElementById("dot");
+    const statusEl = document.getElementById("status");
+    const toast = document.getElementById("toast");
+
+    let currentLaps = 0;
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>toast.classList.remove("show"), 900);
+    }
+
+    function clampLaps(n){
+      n = parseInt(n, 10);
+      if (!Number.isFinite(n)) n = 0;
+      return Math.max(0, n);
+    }
+
+    // Initialize defaults (safe if rules disallow)
+    roomRef.child("targetLaps").set(TARGET_LAPS).catch(()=>{});
+    roomRef.child("poolFeetPerLap").set(FEET_PER_LAP).catch(()=>{});
+    lapsRef.once("value").then(s => {
+      if (s.val() == null) lapsRef.set(0).catch(()=>{});
+    }).catch(()=>{});
+
+    // Listen
+    lapsRef.on("value", snap => {
+      dot.classList.remove("off");
+      statusEl.textContent = "Connected";
+
+      const laps = clampLaps(snap.val() ?? 0);
+      currentLaps = laps;
+
+      const miles = laps * MILES_PER_LAP;
+      const remaining = Math.max(0, TARGET_LAPS - laps);
+
+      lapsBig.textContent = String(laps);
+      milesEl.textContent = miles.toFixed(2);
+      remainingEl.textContent = "Remaining: " + remaining + " laps";
+    }, err => {
+      dot.classList.add("off");
+      statusEl.textContent = "Disconnected";
+    });
+
+    function writeLaps(next){
+      next = clampLaps(next);
+      return lapsRef.set(next)
+        .then(()=>roomRef.child("updatedAt").set(Date.now()).catch(()=>{}))
+        .then(()=>roomRef.child("updatedBy").set("controller").catch(()=>{}))
+        .then(()=>showToast("Saved: " + next + " laps"))
+        .catch((e)=>showToast("Write failed (check rules)"));
+    }
+
+    // Buttons
+    document.getElementById("plus1").onclick  = ()=>writeLaps(currentLaps + 1);
+    document.getElementById("plus5").onclick  = ()=>writeLaps(currentLaps + 5);
+    document.getElementById("plus10").onclick = ()=>writeLaps(currentLaps + 10);
+    document.getElementById("minus1").onclick = ()=>writeLaps(currentLaps - 1);
+
+    // Set
+    document.getElementById("setBtn").onclick = ()=>{
+      const raw = document.getElementById("setInput").value;
+      const next = clampLaps(raw);
+
+      const delta = Math.abs(next - currentLaps);
+      if (delta >= 20){
+        const ok = confirm("Set laps from " + currentLaps + " to " + next + "?");
+        if (!ok) return;
+      }
+      writeLaps(next);
+    };
+
+    // Reset (confirm)
+    document.getElementById("resetBtn").onclick = ()=>{
+      const ok = confirm("Reset laps to 0?");
+      if (!ok) return;
+      writeLaps(0);
+    };
+  </script>
+</body>
+</html>
