@@ -205,7 +205,13 @@ const lapsEl = document.getElementById("laps");
 const barEl = document.getElementById("bar");
 const card = document.getElementById("card");
 
-db.ref("rooms/brad-13-1/lapsCompleted").on("value", snap=>{
+const params = new URLSearchParams(location.search);
+const room = String(params.get("room") || "swim-laps").replace(/[.#$\[\]\/]/g, "-");
+
+db.ref("rooms/" + room + "/lapsCompleted").on("value", (snap) => {
+  const laps = Math.max(0, parseInt(snap.val() || 0, 10));
+  // keep your existing UI update logic below
+});.on("value", snap=>{
   const laps = Math.max(0, parseInt(snap.val()||0));
   const miles = laps*MILES_PER_LAP;
   const progress = Math.min(1,laps/TARGET_LAPS);
