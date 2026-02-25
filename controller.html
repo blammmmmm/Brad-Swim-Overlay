@@ -263,14 +263,19 @@
     const FEET_PER_MILE = 5280;
     const MILES_PER_LAP = FEET_PER_LAP / FEET_PER_MILE;
 
-    const params = new URLSearchParams(location.search);
-    const room = params.get("room") || "brad-13.1";
-    document.getElementById("roomLabel").textContent = room;
+    function sanitizeRoom(s){
+  // RTDB keys cannot contain . # $ [ ] /
+  return String(s || "swim-laps").replace(/[.#$\[\]\/]/g, "-");
+}
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const roomRef = db.ref("rooms/" + room);
-    const lapsRef = db.ref("rooms/" + room + "/lapsCompleted");
+const params = new URLSearchParams(location.search);
+const room = sanitizeRoom(params.get("room") || "swim-laps");
+document.getElementById("roomLabel").textContent = room;
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const roomRef = db.ref("rooms/" + room);
+const lapsRef = db.ref("rooms/" + room + "/lapsCompleted");
 
     const lapsBig = document.getElementById("lapsBig");
     const milesEl = document.getElementById("miles");
@@ -303,22 +308,26 @@
 
     // Listen
     lapsRef.on("value", snap => {
-      dot.classList.remove("off");
-      statusEl.textContent = "Connected";
+  dot.classList.remove("off");
+  statusEl.textContent = "Connected";
 
-      const laps = clampLaps(snap.val() ?? 0);
-      currentLaps = laps;
+  const laps = clampLaps(snap.val() ?? 0);
+  currentLaps = laps;
 
-      const miles = laps * MILES_PER_LAP;
-      const remaining = Math.max(0, TARGET_LAPS - laps);
+  const miles = laps * MILES_PER_LAP;
+  const remaining = TARGET_LAPS - laps;
 
-      lapsBig.textContent = String(laps);
-      milesEl.textContent = miles.toFixed(2);
-      remainingEl.textContent = "Remaining: " + remaining + " laps";
-    }, err => {
-      dot.classList.add("off");
-      statusEl.textContent = "Disconnected";
-    });
+  lapsBig.textContent = String(laps);
+  milesEl.textContent = miles.toFixed(2);
+
+  remainingEl.textContent =
+    remaining > 0
+      ? ("Remaining: " + remaining + " laps")
+      : "Remaining: 0 laps (COMPLETE)";
+}, err => {
+  dot.classList.add("off");
+  statusEl.textContent = "Disconnected";
+});
 
     function writeLaps(next){
       next = clampLaps(next);
