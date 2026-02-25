@@ -184,50 +184,58 @@ html,body{
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyD3YIe1lBy625FN_ujSnwGJXSvDUGbDYfU",
-  authDomain: "brad-swim-overlay.firebaseapp.com",
-  databaseURL: "https://brad-swim-overlay-default-rtdb.firebaseio.com",
-  projectId: "brad-swim-overlay",
-  storageBucket: "brad-swim-overlay.firebasestorage.app",
-  messagingSenderId: "438110148127",
-  appId: "1:438110148127:web:2bcbb03875e68304c0a72a"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyD3YIe1lBy625FN_ujSnwGJXSvDUGbDYfU",
+    authDomain: "brad-swim-overlay.firebaseapp.com",
+    databaseURL: "https://brad-swim-overlay-default-rtdb.firebaseio.com",
+    projectId: "brad-swim-overlay",
+    storageBucket: "brad-swim-overlay.firebasestorage.app",
+    messagingSenderId: "438110148127",
+    appId: "1:438110148127:web:2bcbb03875e68304c0a72a"
+  };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  // init
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-const TARGET_LAPS = 865;
-const MILES_PER_LAP = 80/5280;
+  // constants
+  const TARGET_LAPS = 865;
+  const FEET_PER_LAP = 80;
+  const MILES_PER_LAP = FEET_PER_LAP / 5280;
 
-const milesEl = document.getElementById("miles");
-const lapsEl = document.getElementById("laps");
-const barEl = document.getElementById("bar");
-const card = document.getElementById("card");
+  // elements
+  const milesEl = document.getElementById("miles");
+  const lapsEl  = document.getElementById("laps");
+  const barEl   = document.getElementById("bar");
+  const card    = document.getElementById("card");
 
-const params = new URLSearchParams(location.search);
-const room = String(params.get("room") || "swim-laps").replace(/[.#$\[\]\/]/g, "-");
+  // room (sanitized)
+  const params = new URLSearchParams(location.search);
+  const room = String(params.get("room") || "swim-laps").replace(/[.#$\[\]\/]/g, "-");
 
-db.ref("rooms/" + room + "/lapsCompleted").on("value", (snap) => {
-  const laps = Math.max(0, parseInt(snap.val() || 0, 10));
-  // keep your existing UI update logic below
-});.on("value", snap=>{
-  const laps = Math.max(0, parseInt(snap.val()||0));
-  const miles = laps*MILES_PER_LAP;
-  const progress = Math.min(1,laps/TARGET_LAPS);
+  // listen to laps
+  const lapsRef = db.ref("rooms/" + room + "/lapsCompleted");
 
-  milesEl.textContent = miles.toFixed(2);
-  lapsEl.textContent = "Laps: "+laps+" / "+TARGET_LAPS;
-  barEl.style.width = (progress*100)+"%";
+  lapsRef.on("value", (snap) => {
+    const raw = snap.val();
+    const laps = Math.max(0, parseInt(raw || 0, 10));
 
-  card.classList.remove("tap");
-  void card.offsetWidth;
-  card.classList.add("tap");
+    const miles = laps * MILES_PER_LAP;
+    const progress = Math.min(1, laps / TARGET_LAPS);
 
-  if(laps>=TARGET_LAPS){
-    card.classList.add("complete");
-  }
-});
+    milesEl.textContent = miles.toFixed(2);
+    lapsEl.textContent  = "Laps: " + laps + " / " + TARGET_LAPS;
+    barEl.style.width   = (progress * 100) + "%";
+
+    // subtle "tap" feedback
+    card.classList.remove("tap");
+    void card.offsetWidth;
+    card.classList.add("tap");
+
+    // complete state
+    if (laps >= TARGET_LAPS) card.classList.add("complete");
+    else card.classList.remove("complete");
+  });
 </script>
 </body>
 </html>
